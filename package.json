@@ -1,0 +1,24 @@
+{
+  "name": "sirocco-data",
+  "private": true,
+  "type": "module",
+  "description": "Extraits du code de Sirocco : recommandation, geometrie du campus, moteur de points.",
+  "scripts": {
+    "test": "vitest run",
+    "test:points": "firebase emulators:exec --only database --project demo-sirocco \"vitest run points\"",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "firebase-tools": "^14.0.0",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
