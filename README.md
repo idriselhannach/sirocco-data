@@ -1,9 +1,10 @@
 # Sirocco · la partie données
 
-**Sirocco** est une application mobile qui aide les Français installés à l'étranger, et les
-étudiants d'une même école, à se rencontrer autour d'événements : un café, un match, une
-soirée de révisions. Chaque ville a sa propre communauté. Elle est en ligne depuis l'été 2026,
-avec près de 50 membres répartis entre Marrakech, Paris, Londres, Barcelone, Berlin et l'ESSEC.
+**Sirocco** est une application mobile née d'un constat : dans une nouvelle ville, il est
+difficile de trouver sa communauté, et plus encore de la rencontrer. Chaque ville y a la sienne,
+qui se retrouve autour d'événements : un café, un match, une soirée de révisions. Elle est en
+ligne depuis l'été 2026, sur l'App Store, le Play Store et le web, avec près de 90 membres
+répartis entre Marrakech, Paris, Londres, Barcelone, Berlin, Poissy et l'ESSEC.
 
 Ce dépôt rassemble **trois extraits du vrai code de l'application**, ceux qui touchent aux
 données, avec leurs tests. Le reste de l'application (écrans, messagerie, appels…) reste privé :
@@ -12,7 +13,6 @@ je peux le montrer sur demande.
 <p align="center">
   <img src="captures/01-concept.png" width="190" alt="Le fil d'une ville">
   <img src="captures/03-evenements.png" width="190" alt="Les événements">
-  <img src="captures/05-trophees.png" width="190" alt="Les trophées">
   <img src="captures/08-multivilles.png" width="190" alt="Plusieurs villes">
 </p>
 
@@ -69,25 +69,45 @@ montrent les cas.
 
 ---
 
-## 3. Points et trophées : récompenser sans qu'on puisse tricher
+## 3. Carte des lieux : choisir quoi montrer à chaque zoom
 
-📁 [`points/`](points)
+📁 [`lieux/`](lieux)
 
-**Le problème.** Les membres gagnent des points et des trophées en sortant. Si le téléphone les
-calculait lui-même, n'importe qui pourrait s'en donner.
+**Le problème.** L'onglet Lieux montre, sur une vue satellite, les restaurants, stades, musées
+ou parcs d'une ville, tels qu'Apple Plans les connaît. Il y en a des centaines, et un écran de
+téléphone n'en porte qu'une trentaine avant de devenir illisible. Apple ne donne ni note ni
+fréquentation : il faut décider soi-même ce qui mérite sa place.
 
-**La solution.** Tout est calculé par le serveur, et seulement à partir de **faits qu'un membre
-ne peut pas fabriquer seul** : sa présence est validée par l'organisateur (billet scanné ou case
-cochée), jamais par la simple inscription. Ensuite :
+**La solution.** Trois règles, dans [`choix.ts`](lieux/choix.ts) :
 
-- chaque attribution a une **clé unique** : si le serveur rejoue un calcul, rien n'est payé
-  deux fois ;
-- des **plafonds** : 200 points par jour au plus, et deux amis qui sortent chaque semaine ne
-  « se rencontrent » qu'une fois par mois ;
-- un événement en ligne ne rapporte rien, puisqu'on ne s'y est pas vu.
+- **une importance pour chaque lieu**, faute de note : surtout son genre (un stade ou un musée
+  pèse 10, un café 4, une boutique 2), un peu ce qu'on sait de lui (un site, un numéro) et son
+  rang dans la réponse d'Apple ;
+- **une importance minimale qui monte quand on recule** : de loin, seuls les lieux marquants
+  paraissent ; de près, tous ;
+- **un écart minimal à l'écran** : on parcourt les lieux du plus important au moins important,
+  et on n'en garde un que si aucun autre n'est déjà à moins de 50 pixels (40 de très loin).
+  Les grands passent toujours, les petits remplissent les trous, et en zoomant d'autres
+  apparaissent entre eux sans que ceux déjà là ne bougent.
 
-Le [barème](points/bareme.ts) et le [moteur](points/moteur.ts) sont vérifiés par 14 tests qui
-tournent contre une vraie base de données, lancée en local.
+Deux exceptions : un filtre coché (« Sport ») montre toute sa famille, quelle que soit
+l'importance, et les résultats d'une recherche s'affichent tous, juste sans s'empiler.
+
+**Mesuré.** L'écart était de 62 pixels. Sur Poissy, au simulateur iPhone, le passer à 50 (et
+40 de très loin) a changé le nombre de lieux à l'écran ainsi :
+
+| Zoom | Avant | Après |
+|---|---|---|
+| Très loin | 17 | 22 |
+| Loin | 16 | 23 |
+| Mi-hauteur | 24 | 34 |
+| Près | 26 | 32 |
+
+De très loin, baisser l'importance minimale ne changeait rien : 190 lieux de la vue la
+dépassaient déjà. Ce qui limitait, c'était leur tassement dans quelques centres-villes,
+donc l'écart. À mi-hauteur, l'abaisser faisait surtout entrer des boutiques : il est resté.
+
+Les 14 tests de [`choix.test.ts`](lieux/choix.test.ts) vérifient ces règles.
 
 ---
 
@@ -95,14 +115,14 @@ tournent contre une vraie base de données, lancée en local.
 
 ```bash
 npm install
-npm test             # recommandation et campus
-npm run test:points  # moteur de points, avec l'émulateur Firebase (demande Java)
+npm test   # recommandation, campus et carte des lieux
 ```
 
 ## Technologies
 
-TypeScript · Node.js · Vitest · Firebase (Realtime Database, Cloud Functions) · OpenStreetMap.
-L'application complète utilise aussi React, Capacitor (iOS et Android), MapLibre et three.js.
+TypeScript · Node.js · Vitest · OpenStreetMap · Apple Plans (MapKit JS).
+L'application complète utilise aussi React, Firebase (Realtime Database, Cloud Functions),
+Capacitor (iOS et Android), MapLibre et three.js.
 
 ---
 
